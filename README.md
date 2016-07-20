@@ -1,6 +1,6 @@
 # wallgen
 
-little wallpaper generator that uses [https://unsplash.com/](unsplash.com) to download an random wallpaper and adds some text to it.
+little wallpaper generator written in go, that uses [https://unsplash.com/](unsplash.com) to download an random wallpaper and adds some text to it.
 
 ## install
 
