@@ -14,19 +14,20 @@ $ go get github.com/microo8/wallgen
 $ wallgen -t "hello github"
 ```
 
-```Usage of wallgen:
+```
+Usage of wallgen:
   -dpi int
-    	DPI for the text (default 100)
+        DPI for the text (default 100)
   -font-size int
-    	Font size for the text (default 120)
+        Font size for the text (default 120)
   -h int
-    	height of the image (default 1080)
+        height of the image (default 1080)
   -o string
-    	output file (default "wallpaper.png")
+        output file (default "wallpaper.png")
   -t string
-    	printed text (default "MEH")
+        printed text (default "MEH")
   -w int
-    	width of the image (default 1920)
+        width of the image (default 1920)
 ```
 
 ## example
