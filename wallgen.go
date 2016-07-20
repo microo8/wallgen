@@ -21,10 +21,12 @@ import (
 const unsplashUrl string = "https://source.unsplash.com/random"
 
 var (
-	width  = flag.Int("w", 1920, "width of the image")
-	height = flag.Int("h", 1080, "height of the image")
-	output = flag.String("o", "wallpaper.png", "output file")
-	text   = flag.String("t", "MEH", "printed text")
+	width    = flag.Int("w", 1920, "width of the image")
+	height   = flag.Int("h", 1080, "height of the image")
+	output   = flag.String("o", "wallpaper.png", "output file")
+	text     = flag.String("t", "MEH", "printed text")
+	fontSize = flag.Int("font-size", 120, "Font size for the text")
+	dpi      = flag.Int("dpi", 100, "DPI for the text")
 )
 
 type pixelColor struct {
@@ -125,8 +127,8 @@ func main() {
 			Dst: mask,
 			Src: image.White,
 			Face: truetype.NewFace(f, &truetype.Options{
-				Size:    120,
-				DPI:     100,
+				Size:    float64(*fontSize),
+				DPI:     float64(*dpi),
 				Hinting: font.HintingNone,
 			}),
 		}
