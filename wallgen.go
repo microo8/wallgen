@@ -3,19 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/golang/freetype/truetype"
-	"github.com/microo8/wallgen/data"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"sync"
+
+	"github.com/golang/freetype/truetype"
+	"github.com/microo8/wallgen/data"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 )
 
 const unsplashUrl string = "https://source.unsplash.com/random"
@@ -25,6 +27,7 @@ var (
 	height   = flag.Int("h", 1080, "height of the image")
 	output   = flag.String("o", "wallpaper.png", "output file")
 	text     = flag.String("t", "MEH", "printed text")
+	fontFile = flag.String("font-file", "", "path to TrueType font")
 	fontSize = flag.Int("font-size", 120, "Font size for the text")
 	dpi      = flag.Int("dpi", 100, "DPI for the text")
 )
@@ -111,7 +114,13 @@ func main() {
 	//load font
 	chmask := make(chan image.Image)
 	go func() {
-		fontBytes, err := ubuntu.Asset("Ubuntu-B.ttf")
+		var fontBytes []byte
+		var err error
+		if *fontFile != "" {
+			fontBytes, err = ioutil.ReadFile(*fontFile)
+		} else {
+			fontBytes, err = ubuntu.Asset("Ubuntu-B.ttf")
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
