@@ -40,3 +40,8 @@ You can use it eg. in your i3 config (generates a new wallpaper on every login):
 exec_always --no-startup-id /home/$USER/go/bin/wallgen -t "My favorite quote" -o /home/$USER/.wallpaper.jpg
 exec_always --no-startup-id feh --bg-fill /home/$USER/.wallpaper.jpg
 ```
+
+##TODO
+
+- multiline text
+- more fonts
