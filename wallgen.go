@@ -15,19 +15,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 )
 
 const unsplashUrl string = "https://source.unsplash.com/random"
-
-var (
-	width    = flag.Int("w", 1920, "width of the image")
-	height   = flag.Int("h", 1080, "height of the image")
-	output   = flag.String("o", "wallpaper.png", "output file")
-	text     = flag.String("t", "MEH", "printed text")
-	fontSize = flag.Int("font-size", 120, "Font size for the text")
-	dpi      = flag.Int("dpi", 100, "DPI for the text")
-)
 
 type pixelColor struct {
 	r, g, b, a uint32
@@ -92,6 +84,12 @@ func InvertColors(input image.Image) image.Image {
 }
 
 func main() {
+	var width = flag.Int("w", 1920, "width of the image")
+	var height = flag.Int("h", 1080, "height of the image")
+	var output = flag.String("o", "wallpaper.png", "output file (can end with png/jpeg)")
+	var text = flag.String("t", "MEH", "printed text")
+	var fontSize = flag.Int("font-size", 120, "font size for the text")
+	var dpi = flag.Int("dpi", 100, "DPI for the text")
 	flag.Parse()
 
 	chimg := make(chan image.Image)
@@ -122,7 +120,7 @@ func main() {
 
 		//generate text mast
 		mask := image.NewRGBA(image.Rect(0, 0, *width, *height))
-		//draw.Draw(mask, mask.Bounds(), image.White, image.ZP, draw.Src)
+
 		d := &font.Drawer{
 			Dst: mask,
 			Src: image.White,
@@ -132,11 +130,18 @@ func main() {
 				Hinting: font.HintingNone,
 			}),
 		}
-		d.Dot = fixed.Point26_6{
-			X: (fixed.I(*width) - d.MeasureString(*text)) / 2,
-			Y: fixed.I(*height) / 2,
+
+		texts := strings.Split(*text, "\\n")
+		textHeight := int(*fontSize * *dpi / 72)
+		Y := fixed.I(*height-len(texts)*textHeight) / 2
+
+		for i, t := range texts {
+			d.Dot = fixed.Point26_6{
+				X: (fixed.I(*width) - d.MeasureString(t)) / 2,
+				Y: Y + fixed.I(textHeight*(i+1)),
+			}
+			d.DrawBytes([]byte(t))
 		}
-		d.DrawString(*text)
 		chmask <- mask
 	}()
 
@@ -150,9 +155,18 @@ func main() {
 	dstB := img.Bounds()
 	draw.Draw(finalDst, finalDst.Bounds(), img, dstB.Min, draw.Src)
 	draw.DrawMask(finalDst, finalDst.Bounds(), changedDst, image.ZP, mask, image.ZP, draw.Over)
+
 	file, err := os.Create(*output)
 	if err != nil {
 		log.Fatal(err)
 	}
-	png.Encode(file, finalDst)
+	outputLen := len(*output)
+	switch {
+	case outputLen < 4:
+		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
+	case strings.ToLower((*output)[outputLen-4:]) == ".png":
+		png.Encode(file, finalDst)
+	case strings.ToLower((*output)[outputLen-4:]) == ".jpg" || strings.ToLower((*output)[outputLen-4:]) == ".jpeg":
+		jpeg.Encode(file, finalDst, &jpeg.Options{Quality: 90})
+	}
 }
