@@ -30,6 +30,8 @@ Usage of wallgen:
         width of the image (default 1920)
 ```
 
+the output saves in png or jpg, determined by the output file extension
+
 ## example
 
 ![wallpaper example](https://raw.githubusercontent.com/microo8/wallgen/master/wallpaper.png "Wallpaper")
@@ -43,6 +45,4 @@ exec_always --no-startup-id feh --bg-fill /home/$USER/.wallpaper.png
 
 ##TODO
 
-- multiline text
-- more fonts
-- output format (png/jpeg)
+- multiline text (some bugs)
