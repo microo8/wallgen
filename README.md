@@ -17,20 +17,23 @@ $ wallgen -t "hello github"
 ```
 Usage of wallgen:
   -dpi int
-        DPI for the text (default 100)
+    	DPI for the text (default 100)
+  -font-file string
+    	path to TrueType font
   -font-size int
-        Font size for the text (default 120)
+    	Font size for the text (default 120)
   -h int
-        height of the image (default 1080)
+    	height of the image (default 1080)
   -o string
-        output file (default "wallpaper.png")
+    	output file (default "wallpaper.png")
   -t string
-        printed text (default "MEH")
+    	printed text (default "MEH")
   -w int
-        width of the image (default 1920)
+    	width of the image (default 1920)
 ```
 
 the output saves in png or jpg, determined by the output file extension
+
 supports multiline text eg. `$ wallgen -t "foo\nbar"`
 
 ## example
