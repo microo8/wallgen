@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/microo8/wallgen/data"
@@ -33,68 +32,67 @@ var (
 	dpi      = flag.Int("dpi", 100, "DPI for the text")
 )
 
-type pixelColor struct {
-	r, g, b, a uint32
-}
-
-func (c pixelColor) RGBA() (uint32, uint32, uint32, uint32) {
-	return c.r, c.g, c.b, c.a
-}
-
 //Flip returns a copy of input that has been flipped horizontally and vertically.
 func Flip(input image.Image) image.Image {
-
-	var wg sync.WaitGroup
-	//create new image
 	bounds := input.Bounds()
 	newImg := image.NewRGBA(bounds)
 	for x := 0; x < bounds.Max.X; x++ {
-		x := x
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for y := 0; y < bounds.Max.Y; y++ {
-				newImg.Set(bounds.Max.X-x, bounds.Max.Y-y, input.At(x, y))
-			}
-		}()
+		for y := 0; y < bounds.Max.Y; y++ {
+			newImg.Set(bounds.Max.X-x, bounds.Max.Y-y, input.At(x, y))
+		}
 	}
-	wg.Wait()
-
 	return newImg
 }
 
 //InvertColors returns a copy of input that has its colors inverted.
 func InvertColors(input image.Image) image.Image {
-
-	//create new image
 	bounds := input.Bounds()
 	newImg := image.NewRGBA(bounds)
 
-	var currentPixelColor color.Color
-	var r, g, b, a uint32
 	for x := 0; x < bounds.Max.X; x++ {
 		for y := 0; y < bounds.Max.Y; y++ {
-			r, g, b, a = input.At(x, y).RGBA()
-			currentPixelColor = pixelColor{
-				r: 0xffff - r,
-				g: 0xffff - g,
-				b: 0xffff - b,
-				a: a,
-			}
-			newImg.Set(x, y, currentPixelColor)
+			pixel := input.At(x, y).(color.RGBA)
+			newImg.Set(x, y, color.RGBA{
+				R: 0xff - pixel.R,
+				G: 0xff - pixel.G,
+				B: 0xff - pixel.B,
+				A: pixel.A,
+			})
 		}
 	}
-
 	return newImg
 }
+
+const (
+	PNG int = iota
+	JPG
+)
 
 func main() {
 	flag.Parse()
 
+	//getting output type before running everything
+	var ext int
+	outputLen := len(*output)
+	switch {
+	case outputLen < 4:
+		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
+		return
+	case strings.ToLower((*output)[outputLen-4:]) == ".png":
+		ext = PNG
+	case strings.ToLower((*output)[outputLen-4:]) == ".jpg" || strings.ToLower((*output)[outputLen-5:]) == ".jpeg":
+		ext = JPG
+	default:
+		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
+		return
+	}
+
 	chimg := make(chan image.Image)
 
+	//download image
 	go func() {
 		resp, err := http.Get(fmt.Sprintf("%s/%dx%d", unsplashUrl, *width, *height))
+		defer resp.Body.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -136,7 +134,8 @@ func main() {
 			}),
 		}
 
-		texts := strings.Split(*text, "\\n")
+		//split text rows and draw the lines
+		texts := strings.Split(*text, "\n")
 		textHeight := int(*fontSize * *dpi / 72)
 		Y := fixed.I(*height-len(texts)*textHeight) / 2
 
@@ -165,13 +164,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	outputLen := len(*output)
-	switch {
-	case outputLen < 4:
-		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
-	case strings.ToLower((*output)[outputLen-4:]) == ".png":
+
+	switch ext {
+	case PNG:
 		png.Encode(file, finalDst)
-	case strings.ToLower((*output)[outputLen-4:]) == ".jpg" || strings.ToLower((*output)[outputLen-4:]) == ".jpeg":
+	case JPG:
 		jpeg.Encode(file, finalDst, &jpeg.Options{Quality: 90})
 	}
 }
