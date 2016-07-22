@@ -66,7 +66,6 @@ func Flip(input image.Image) image.Image {
 //InvertColors returns a copy of input that has its colors inverted.
 func InvertColors(input image.Image) image.Image {
 
-	var wg sync.WaitGroup
 	//create new image
 	bounds := input.Bounds()
 	newImg := image.NewRGBA(bounds)
@@ -74,23 +73,17 @@ func InvertColors(input image.Image) image.Image {
 	var currentPixelColor color.Color
 	var r, g, b, a uint32
 	for x := 0; x < bounds.Max.X; x++ {
-		x := x
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for y := 0; y < bounds.Max.Y; y++ {
-				r, g, b, a = input.At(x, y).RGBA()
-				currentPixelColor = pixelColor{
-					r: 0xffff - r,
-					g: 0xffff - g,
-					b: 0xffff - b,
-					a: a,
-				}
-				newImg.Set(x, y, currentPixelColor)
+		for y := 0; y < bounds.Max.Y; y++ {
+			r, g, b, a = input.At(x, y).RGBA()
+			currentPixelColor = pixelColor{
+				r: 0xffff - r,
+				g: 0xffff - g,
+				b: 0xffff - b,
+				a: a,
 			}
-		}()
+			newImg.Set(x, y, currentPixelColor)
+		}
 	}
-	wg.Wait()
 
 	return newImg
 }
