@@ -31,6 +31,7 @@ Usage of wallgen:
 ```
 
 the output saves in png or jpg, determined by the output file extension
+supports multiline text eg. `$ wallgen -t "foo\nbar"`
 
 ## example
 
@@ -45,4 +46,4 @@ exec_always --no-startup-id feh --bg-fill /home/$USER/.wallpaper.png
 
 ##TODO
 
-- multiline text (some bugs)
+- support spetial characters like: ♥, ✓,♫
