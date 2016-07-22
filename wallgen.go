@@ -44,8 +44,8 @@ func Flip(input image.Image) image.Image {
 	return newImg
 }
 
-//InvertColors returns a copy of input that has its colors inverted.
-func InvertColors(input image.Image) image.Image {
+//Invert returns a copy of input that has its colors inverted.
+func Invert(input image.Image) image.Image {
 	bounds := input.Bounds()
 	newImg := image.NewRGBA(bounds)
 
@@ -87,9 +87,8 @@ func main() {
 		return
 	}
 
-	chimg := make(chan image.Image)
-
 	//download image
+	chimg := make(chan draw.Image)
 	go func() {
 		resp, err := http.Get(fmt.Sprintf("%s/%dx%d", unsplashUrl, *width, *height))
 		defer resp.Body.Close()
@@ -100,11 +99,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		chimg <- img
+		drawable := image.NewRGBA(img.Bounds())
+		draw.Draw(drawable, drawable.Bounds(), img, img.Bounds().Min, draw.Src)
+		chimg <- drawable
 	}()
 
 	//load font
-	chmask := make(chan image.Image)
+	chmask := make(chan draw.Image)
 	go func() {
 		var fontBytes []byte
 		var err error
@@ -124,7 +125,7 @@ func main() {
 		//generate text mast
 		mask := image.NewRGBA(image.Rect(0, 0, *width, *height))
 
-		d := &font.Drawer{
+		drawer := &font.Drawer{
 			Dst: mask,
 			Src: image.White,
 			Face: truetype.NewFace(f, &truetype.Options{
@@ -135,30 +136,25 @@ func main() {
 		}
 
 		//split text rows and draw the lines
-		texts := strings.Split(*text, "\n")
+		texts := strings.Split(strings.Replace(*text, "\\n", "\n", -1), "\n")
 		textHeight := int(*fontSize * *dpi / 72)
 		Y := fixed.I(*height-len(texts)*textHeight) / 2
 
 		for i, t := range texts {
-			d.Dot = fixed.Point26_6{
-				X: (fixed.I(*width) - d.MeasureString(t)) / 2,
+			drawer.Dot = fixed.Point26_6{
+				X: (fixed.I(*width) - drawer.MeasureString(t)) / 2,
 				Y: Y + fixed.I(textHeight*(i+1)),
 			}
-			d.DrawBytes([]byte(t))
+			drawer.DrawBytes([]byte(t))
 		}
 		chmask <- mask
 	}()
 
-	mask := <-chmask
 	img := <-chimg
+	changedDst := Invert(Flip(img))
 
-	finalDst := image.NewRGBA(img.Bounds())
-	changedDst := InvertColors(Flip(img))
-
-	//Convert dst
-	dstB := img.Bounds()
-	draw.Draw(finalDst, finalDst.Bounds(), img, dstB.Min, draw.Src)
-	draw.DrawMask(finalDst, finalDst.Bounds(), changedDst, image.ZP, mask, image.ZP, draw.Over)
+	mask := <-chmask
+	draw.DrawMask(img, img.Bounds(), changedDst, image.ZP, mask, image.ZP, draw.Over)
 
 	file, err := os.Create(*output)
 	if err != nil {
@@ -167,8 +163,8 @@ func main() {
 
 	switch ext {
 	case PNG:
-		png.Encode(file, finalDst)
+		png.Encode(file, img)
 	case JPG:
-		jpeg.Encode(file, finalDst, &jpeg.Options{Quality: 90})
+		jpeg.Encode(file, img, &jpeg.Options{Quality: 90})
 	}
 }
