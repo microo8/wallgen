@@ -49,4 +49,4 @@ exec_always --no-startup-id feh --bg-fill /home/$USER/.wallpaper.png
 
 ##TODO
 
-- support spetial characters like: ♥, ✓,♫
+- support special characters like: ♥, ✓,♫
