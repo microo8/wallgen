@@ -20,7 +20,7 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-const unsplashUrl string = "https://source.unsplash.com/random"
+const unsplashURL string = "https://source.unsplash.com/random"
 
 var (
 	width    = flag.Int("w", 1920, "width of the image")
@@ -63,6 +63,7 @@ func Invert(input image.Image) image.Image {
 	return newImg
 }
 
+//types enum
 const (
 	PNG int = iota
 	JPG
@@ -90,12 +91,12 @@ func main() {
 	//download image
 	chimg := make(chan draw.Image)
 	go func() {
-		resp, err := http.Get(fmt.Sprintf("%s/%dx%d", unsplashUrl, *width, *height))
+		resp, err := http.Get(fmt.Sprintf("%s/%dx%d", unsplashURL, *width, *height))
 		defer resp.Body.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
-		img, err := jpeg.Decode(resp.Body)
+		img, _, err := image.Decode(resp.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
