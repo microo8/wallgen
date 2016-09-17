@@ -16,6 +16,7 @@ import (
 
 	"github.com/golang/freetype/truetype"
 	"github.com/microo8/wallgen/data"
+	"github.com/nfnt/resize"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
@@ -100,6 +101,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if img.Bounds().Dx() != *width || img.Bounds().Dy() != *height {
+			img = resize.Resize(uint(*width), uint(*height), img, resize.Bicubic)
+		}
+		log.Println(*width, *height)
+		log.Println(img.Bounds())
 		drawable := image.NewRGBA(img.Bounds())
 		draw.Draw(drawable, drawable.Bounds(), img, img.Bounds().Min, draw.Src)
 		chimg <- drawable
