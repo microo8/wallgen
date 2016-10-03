@@ -1,3 +1,5 @@
+[![Report card](http://goreportcard.com/badge/microo8/wallgen)](http://goreportcard.com/report/microo8/wallgen)
+
 # wallgen
 
 little wallpaper generator written in go, that uses [unsplash.com](https://unsplash.com) to download an random wallpaper and adds some text to it.
