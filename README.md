@@ -2,7 +2,7 @@
 
 # wallgen
 
-little wallpaper generator written in go, that uses [unsplash.com](https://unsplash.com) to download an random wallpaper and adds some text to it.
+Little wallpaper generator written in go, that uses [unsplash.com](https://unsplash.com) to download an random wallpaper and adds some text to it.
 
 ## install
 
@@ -18,6 +18,8 @@ $ wallgen -t "hello github"
 
 ```
 Usage of wallgen:
+  -c string
+      hex value for text color (default "")
   -dpi int
     	DPI for the text (default 100)
   -font-file string
@@ -34,9 +36,14 @@ Usage of wallgen:
     	width of the image (default 1920)
 ```
 
-the output saves in png or jpg, determined by the output file extension
+The output saves in png or jpg, determined by the output file extension.  
 
-supports multiline text eg. `$ wallgen -t "foo\nbar"`
+Supports multiline text eg. `$ wallgen -t "foo\nbar"`.  
+
+Optional text color can be entered as a text string (e.g. "FFFFFF") or
+as a string of three integers in a string (e.g. "255,255,255").  
+
+For finding hex color values see [this free tool](http://www.color-hex.com/).  
 
 ## example
 
