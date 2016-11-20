@@ -7,6 +7,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"image"
@@ -18,6 +19,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/golang/freetype/truetype"
@@ -30,13 +32,14 @@ import (
 const unsplashURL string = "https://source.unsplash.com/random"
 
 var (
-	width    = flag.Int("w", 1920, "width of the image")
-	height   = flag.Int("h", 1080, "height of the image")
-	output   = flag.String("o", "wallpaper.png", "output file")
-	text     = flag.String("t", "MEH", "printed text")
-	fontFile = flag.String("font-file", "", "path to TrueType font")
-	fontSize = flag.Int("font-size", 120, "Font size for the text")
-	dpi      = flag.Int("dpi", 100, "DPI for the text")
+	width     = flag.Int("w", 1920, "width of the image")
+	height    = flag.Int("h", 1080, "height of the image")
+	output    = flag.String("o", "wallpaper.png", "output file")
+	text      = flag.String("t", "MEH", "printed text")
+	fontColor = flag.String("c", "", "optional text color")
+	fontFile  = flag.String("font-file", "", "path to TrueType font")
+	fontSize  = flag.Int("font-size", 120, "Font size for the text")
+	dpi       = flag.Int("dpi", 100, "DPI for the text")
 )
 
 //Flip returns a copy of input that has been flipped horizontally and vertically.
@@ -68,6 +71,74 @@ func Invert(input image.Image) image.Image {
 		}
 	}
 	return newImg
+}
+
+//rgbTranslate interprets color settings for text RGB input
+func rgbTranslate(input string) []int {
+	rgbOut := []int{}
+	split := strings.FieldsFunc(input, func(r rune) bool {
+		switch r {
+		case ',', ' ', '/', '-':
+			return true
+		}
+		return false
+	})
+	for i := 0; i < len(split); i ++ {
+		value, _ := strconv.ParseInt(split[i], 10, 0)
+        rgbOut = append(rgbOut, int(value))
+	}
+	return rgbOut
+}
+
+//hexTranslate interprets color settings for texxt hex input
+func hexTranslate(input string) []int {
+	rgbOut := []int{}
+    for i := 0; i <= 4; i += 2 {
+		value, _ := hex.DecodeString(strings.ToUpper(input[i:i+2]))
+		rgbOut = append(rgbOut, int(value[0]))
+	}
+	return rgbOut
+}
+
+//Color changes text colors to the user-defined value.
+func Color(input image.Image) image.Image {
+	bounds := input.Bounds()
+	newImg := image.NewRGBA(bounds)
+
+    rgb := []int{}
+    if len(*fontColor) == 6 {
+        rgb = hexTranslate(*fontColor)
+    } else {
+        rgb = rgbTranslate(*fontColor)
+    }
+
+    for i := 0; i < len(rgb); i ++ {
+        if 255 < rgb[i] || rgb[i] < 0 {
+            fmt.Println("Incorrect hex color input")
+            os.Exit(1)
+        }
+    }
+
+    for x := 0; x < bounds.Max.X; x++ {
+        for y := 0; y < bounds.Max.Y; y++ {
+            newImg.Set(x, y, color.RGBA{
+                R: uint8(rgb[0]),
+				G: uint8(rgb[1]),
+				B: uint8(rgb[2]),
+                A: uint8(255),
+            })
+        }
+    }
+	return newImg
+}
+
+//Evaluator determines text invert of user color change
+func Evaluator(input image.Image) image.Image {
+    if *fontColor != "" {
+        return Color(input)
+    } else {
+        return Invert(Flip(input))
+    }
 }
 
 //types enum
@@ -164,7 +235,8 @@ func main() {
 	}()
 
 	img := <-chimg
-	changedDst := Invert(Flip(img))
+
+    changedDst := Evaluator(img)
 
 	mask := <-chmask
 	draw.DrawMask(img, img.Bounds(), changedDst, image.ZP, mask, image.ZP, draw.Over)
