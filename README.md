@@ -32,6 +32,8 @@ Usage of wallgen:
     	output file (default "wallpaper.png")
   -t string
     	printed text (default "MEH")
+  -q string
+		keyword to search on unsplash
   -w int
     	width of the image (default 1920)
 ```
