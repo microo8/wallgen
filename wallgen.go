@@ -19,11 +19,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/microo8/wallgen/data"
+	"github.com/microo8/wallpaper"
 	"github.com/nfnt/resize"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
@@ -34,7 +36,7 @@ const unsplashURL string = "https://source.unsplash.com/random"
 var (
 	width     = flag.Int("w", 1920, "width of the image")
 	height    = flag.Int("h", 1080, "height of the image")
-	output    = flag.String("o", "wallpaper.png", "output file")
+	output    = flag.String("o", "-", "output file (if '-' is used it will set the current wallpaper)")
 	text      = flag.String("t", "MEH", "printed text")
 	query     = flag.String("q", "", "keyword to search in unsplash")
 	fontColor = flag.String("c", "", "optional text color")
@@ -150,19 +152,24 @@ const (
 func main() {
 	flag.Parse()
 
+	filepath := *output
+	if filepath == "-" {
+		filepath = path.Join(os.TempDir(), "wallpaper.png")
+	}
+
 	//getting output type before running everything
 	var ext int
-	outputLen := len(*output)
+	outputLen := len(filepath)
 	switch {
-	case outputLen < 4:
-		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
+	case outputLen < 4 && filepath != "-":
+		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg, or it must be '-'")
 		return
-	case strings.ToLower((*output)[outputLen-4:]) == ".png":
+	case strings.ToLower((filepath)[outputLen-4:]) == ".png":
 		ext = PNG
-	case strings.ToLower((*output)[outputLen-4:]) == ".jpg" || strings.ToLower((*output)[outputLen-5:]) == ".jpeg":
+	case strings.ToLower((filepath)[outputLen-4:]) == ".jpg" || strings.ToLower((filepath)[outputLen-5:]) == ".jpeg":
 		ext = JPG
 	default:
-		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg")
+		fmt.Println("Output file must end with one of : .png/.jpg/.jpeg, or it must be '-'")
 		return
 	}
 
@@ -239,7 +246,7 @@ func main() {
 	mask := <-chmask
 	draw.DrawMask(img, img.Bounds(), changedDst, image.ZP, mask, image.ZP, draw.Over)
 
-	file, err := os.Create(*output)
+	file, err := os.Create(filepath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -249,5 +256,9 @@ func main() {
 		png.Encode(file, img)
 	case JPG:
 		jpeg.Encode(file, img, &jpeg.Options{Quality: 90})
+	}
+
+	if *output == "-" {
+		wallpaper.SetFromFile(filepath)
 	}
 }
